@@ -1,0 +1,8 @@
+# wrangler.toml
+name = "my-analytics-app"
+main = ".open-next/worker.js"
+compatibility_date = "2025-10-22"
+compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = ".open-next/assets"
