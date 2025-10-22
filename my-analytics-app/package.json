@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cf": "open-next build",
+    "preview:cf": "npm run build:cf && wrangler pages dev .open-next",
     "start": "next start",
     "lint": "eslint"
   },
@@ -16,12 +18,14 @@
     "react-dom": "19.2.0"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.11.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
+    "open-next": "^3.1.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
