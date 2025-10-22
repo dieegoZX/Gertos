@@ -4,9 +4,5 @@ main = "my-analytics-app/.open-next/worker.js"
 compatibility_date = "2025-10-22"
 compatibility_flags = ["nodejs_compat"]
 
-[build]
-command = "cd my-analytics-app && npm install && npm run build:cf"
-watch_dir = "my-analytics-app"
-
 [site]
 bucket = "my-analytics-app/.open-next/assets"
