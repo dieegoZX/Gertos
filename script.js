@@ -146,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = chartData.map(row => parseFloat(row[yCol]));
             const isNumeric = data.every(d => typeof d === 'number' && !isNaN(d));
             if (!isNumeric) {
-                showMessage(`A coluna "${yCol}" deve conter apenas números.`, 'error');
-                return null;
+                // Em vez de retornar nulo, podemos lidar com o erro aqui
+                return { error: `A coluna "${yCol}" contém dados não numéricos.` };
             }
             return {
                 label: yCol,
@@ -156,10 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 borderColor: colors[index % colors.length].replace('0.6', '1'),
                 borderWidth: 1
             };
-        }).filter(Boolean); // Filtra datasets nulos (não numéricos)
+        });
 
-        if (datasets.length < yColumns.length) { // Se houve erro de validação
-            analysisSection.style.display = 'none';
+        const firstError = datasets.find(ds => ds.error);
+        if (firstError) {
+            showMessage(firstError.error, 'error');
+            // Não atualiza o gráfico se houver um erro, mantendo o estado anterior
             return;
         } else {
             showMessage('');
@@ -204,6 +206,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const yColumns = Array.from(yAxisSelect.selectedOptions).map(opt => opt.value);
+
+        // Validação antes de gerar o link
+        const allYColumnsAreValid = yColumns.every(yCol => {
+            const data = chartData.map(row => parseFloat(row[yCol]));
+            return data.every(d => typeof d === 'number' && !isNaN(d));
+        });
+
+        if (!allYColumnsAreValid) {
+            showMessage('Uma ou mais colunas selecionadas para o Eixo Y contêm dados não numéricos. Por favor, corrija antes de partilhar.', 'error');
+            return;
+        }
+
         const state = {
             data: chartData,
             headers: chartHeaders,
@@ -220,14 +235,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         shareLinkInput.value = url;
         shareLinkInput.select();
-        showMessage('Link copiado para a área de transferência!', 'info');
+        showMessage('Link gerado! Copie o texto acima.', 'info');
+
         // Tenta copiar para a área de transferência
-        try {
-            navigator.clipboard.writeText(url);
-        } catch (err) {
+        navigator.clipboard.writeText(url).then(() => {
+            showMessage('Link copiado para a área de transferência!', 'info');
+        }).catch(err => {
             console.error('Falha ao copiar o link: ', err);
-            showMessage('Link gerado. Copie-o manualmente.', 'info');
-        }
+            // A mensagem "Copie o texto acima" já está visível, então não precisamos de fazer mais nada.
+        });
     }
 
      function handleFile(file) {
