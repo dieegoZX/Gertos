@@ -8,8 +8,7 @@
     "build:cf": "open-next build",
     "preview:cf": "npm run build:cf && wrangler pages dev .open-next",
     "start": "next start",
-    "lint": "eslint",
-    "postinstall": "npm run build:cf && ls -aR"
+    "lint": "eslint"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

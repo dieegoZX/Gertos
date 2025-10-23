@@ -1,8 +1,14 @@
 # wrangler.toml
 name = "my-analytics-app"
-main = ".open-next/worker.js"
 compatibility_date = "2025-10-22"
 compatibility_flags = ["nodejs_compat"]
 
-[site]
+[build]
+command = "npm install && npm run build:cf"
+watch_dir = "src"
+
+[env.production]
+main = ".open-next/worker.js"
+
+[env.production.site]
 bucket = ".open-next/assets"
