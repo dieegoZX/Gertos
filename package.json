@@ -9,7 +9,7 @@
     "preview:cf": "npm run build:cf && wrangler pages dev .open-next",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets"
+    "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets --project-name=my-analytics-app"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
