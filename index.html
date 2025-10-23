@@ -7,15 +7,72 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>Dashboard de Análise de Dados</h1>
-    </header>
-    <main>
-        <div class="chart-container">
-            <canvas id="myChart"></canvas>
-        </div>
-    </main>
+    <div class="container">
+        <aside class="control-panel">
+            <h2>Painel de Controlo</h2>
+
+            <div class="control-group">
+                <h3>Carregar Dados</h3>
+                <div id="drop-area" class="drop-area">
+                    <p>Arraste e solte o seu ficheiro CSV aqui ou clique para selecionar.</p>
+                    <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                </div>
+                <div id="spinner" class="spinner" style="display: none;"></div>
+            </div>
+
+            <div class="control-group">
+                <h3>Customização do Gráfico</h3>
+                <label for="xAxisSelect">Eixo X (Etiquetas):</label>
+                <select id="xAxisSelect" disabled></select>
+
+                <label for="yAxisSelect">Eixo Y (Valores):</label>
+                <select id="yAxisSelect" disabled></select>
+            </div>
+
+            <div class="control-group">
+                <h3>Tipo de Gráfico</h3>
+                <div class="chart-type-buttons">
+                    <button class="chart-type-btn active" data-type="bar">Barras</button>
+                    <button class="chart-type-btn" data-type="line">Linhas</button>
+                    <button class="chart-type-btn" data-type="pie">Pizza</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Partilhar</h3>
+                <button id="exportBtn" class="export-btn">Exportar como PNG</button>
+            </div>
+
+             <div id="message-area" class="message-area"></div>
+        </aside>
+
+        <main class="dashboard">
+            <header>
+                <h1>Dashboard de Análise de Dados</h1>
+            </header>
+            <section class="chart-container">
+                <canvas id="myChart"></canvas>
+            </section>
+            <section id="analysis-results" class="analysis-section" style="display: none;">
+                <h2>Análise Rápida</h2>
+                <div class="stat">
+                    <strong>Total:</strong> <span id="totalValue">--</span>
+                </div>
+                <div class="stat">
+                    <strong>Média:</strong> <span id="averageValue">--</span>
+                </div>
+                <div class="stat">
+                    <strong>Valor Máximo:</strong> <span id="maxValue">--</span>
+                </div>
+                <div class="stat">
+                    <strong>Valor Mínimo:</strong> <span id="minValue">--</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
