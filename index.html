@@ -137,7 +137,11 @@
     dropZone.addEventListener('click', () => csvFileInput.click()); // Make the entire zone clickable
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'));
-    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('border-indigo-500'); handleFileUpload(e.dataTransfer.files[0]); });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-indigo-500');
+        handleFileUpload(e.dataTransfer.files[0]);
+    });
 
     // --- Initialization ---
     function init() {
