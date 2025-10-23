@@ -28,15 +28,17 @@
             --bg-primary: #ffffff; --bg-secondary: #f8fafc; --bg-tertiary: #e2e8f0;
             --text-primary: #1e293b; --text-secondary: #64748b; --border: #e2e8f0;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-secondary); color: var(--text-primary); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-secondary); color: var(--text-primary); transition: background-color 0.3s, color 0.3s; }
         .gradient-bg { background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); }
-        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); position: relative; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+        .tab-btn { transition: color 0.3s, border-color 0.3s; }
         .tab-active { border-bottom-color: var(--primary); color: var(--primary); }
         .loader { border: 4px solid rgba(99, 102, 241, 0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .chart-container { position: relative; height: 400px; width: 100%; }
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: var(--bg-tertiary); }
@@ -44,48 +46,47 @@
     </style>
 </head>
 <body data-theme="light">
-    <header class="gradient-bg text-white shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <i class="fas fa-chart-line text-3xl"></i>
+    <header class="gradient-bg text-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-chart-pie text-2xl"></i>
                 <div>
-                    <h1 class="text-2xl md:text-3xl font-bold">Dashboard Analytics Pro</h1>
-                    <p class="text-sm opacity-90">Análise Avançada de Dados CSV</p>
+                    <h1 class="text-xl md:text-2xl font-bold">Analytics Pro</h1>
                 </div>
             </div>
-            <button id="themeToggle" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition"><i class="fas fa-moon text-xl"></i></button>
+            <button id="themeToggle" class="p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors"><i class="fas fa-moon text-lg"></i></button>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 md:p-8">
-        <section id="uploadSection" class="mb-8 animate-fade-in max-w-4xl mx-auto">
-            <div class="stat-card rounded-2xl shadow-xl p-8">
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <section id="uploadSection" class="mb-8 animate-fade-in max-w-3xl mx-auto">
+            <div class="stat-card rounded-xl shadow-lg p-6 sm:p-8">
                 <div class="text-center mb-6">
-                    <i class="fas fa-cloud-upload-alt text-6xl text-indigo-500 mb-4"></i>
-                    <h2 class="text-2xl font-bold mb-2">Carregar Dados</h2>
-                    <p class="text-gray-500">Faça upload do seu arquivo CSV para começar a análise</p>
+                    <i class="fas fa-cloud-upload-alt text-5xl text-indigo-500 mb-3"></i>
+                    <h2 class="text-xl sm:text-2xl font-bold">Carregar Planilha</h2>
+                    <p class="text-sm text-text-secondary mt-1">Arraste, solte ou selecione seu arquivo CSV para iniciar a análise.</p>
                 </div>
-                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-500 transition-colors cursor-pointer">
+                <div id="dropZone" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-indigo-500 transition-colors cursor-pointer">
                     <input type="file" id="csvFile" accept=".csv" class="hidden">
-                    <label for="csvFile" class="cursor-pointer">
-                        <i class="fas fa-file-csv text-5xl text-gray-400 mb-4"></i>
-                        <p class="text-lg font-medium mb-2">Arraste e solte ou clique para selecionar</p>
-                        <p class="text-sm text-gray-500">Arquivos CSV suportados</p>
+                    <label for="csvFile" class="cursor-pointer flex flex-col items-center justify-center">
+                        <i class="fas fa-file-csv text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-md font-medium">Arraste e solte ou clique para selecionar</p>
+                        <p class="text-xs text-text-secondary mt-1">Apenas arquivos .csv</p>
                     </label>
                 </div>
                 <div id="loadingSpinner" class="hidden justify-center items-center mt-6"><div class="loader"></div></div>
-                <div id="errorMessage" class="hidden mt-4 p-4 bg-red-100 border border-red-200 rounded-lg text-red-700"></div>
+                <div id="errorMessage" class="hidden mt-4 p-3 bg-red-100 border border-red-200 rounded-md text-sm text-red-700"></div>
             </div>
         </section>
 
         <section id="dashboardSection" class="hidden animate-fade-in">
-            <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
-            <div class="stat-card rounded-2xl shadow-xl p-6 mb-8">
-                <h3 class="text-xl font-bold mb-6 flex items-center"><i class="fas fa-sliders-h mr-2 text-indigo-500"></i>Painel de Controle</h3>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
+            <div class="stat-card rounded-xl shadow-lg p-4 sm:p-6 mb-6">
+                <h3 class="text-lg font-bold mb-4 flex items-center"><i class="fas fa-sliders-h mr-2 text-indigo-500"></i>Painel de Controle</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Dimensão (Eixo X)</label>
-                        <select id="dimensionSelect" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500"></select>
+                        <label for="dimensionSelect" class="block text-xs font-medium text-text-secondary mb-1">Dimensão (Eixo X)</label>
+                        <select id="dimensionSelect" class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-sm focus:ring-2 focus:ring-indigo-500"></select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-2">Métricas</label>
@@ -133,6 +134,7 @@
     // --- Event Listeners ---
     themeToggle.addEventListener('click', toggleTheme);
     csvFileInput.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+    dropZone.addEventListener('click', () => csvFileInput.click()); // Make the entire zone clickable
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'));
     dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('border-indigo-500'); handleFileUpload(e.dataTransfer.files[0]); });
@@ -257,9 +259,67 @@
         chartTypes.forEach(type => createChart(`chart-${type}`, type, labels, datasets));
     }
 
+    let sortConfig = { key: null, direction: 'ascending' };
+    let currentPage = 1;
+    let rowsPerPage = 10;
+
     function renderTable() {
         const container = document.getElementById('tableTab');
-        container.innerHTML = `<div class="overflow-x-auto custom-scrollbar stat-card rounded-xl p-4"><table class="w-full text-left"><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${filteredData.map(row => `<tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+
+        // Sorting logic
+        if (sortConfig.key) {
+            filteredData.sort((a, b) => {
+                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'ascending' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        // Pagination logic
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const paginatedData = filteredData.slice(start, end);
+
+        const tableHTML = `
+            <div class="overflow-x-auto custom-scrollbar stat-card rounded-xl p-4">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr>
+                            ${headers.map(h => `<th class="p-2 cursor-pointer" onclick="sortTable('${h}')">${h} ${sortConfig.key === h ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : ''}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${paginatedData.map(row => `<tr>${headers.map(h => `<td class="p-2 border-t border-border">${row[h]}</td>`).join('')}</tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-between items-center mt-4 text-sm">
+                <span>Página ${currentPage} de ${Math.ceil(filteredData.length / rowsPerPage)}</span>
+                <div>
+                    <button onclick="changePage(currentPage - 1)" class="px-3 py-1 border rounded-md mr-2 disabled:opacity-50" ${currentPage === 1 ? 'disabled' : ''}>Anterior</button>
+                    <button onclick="changePage(currentPage + 1)" class="px-3 py-1 border rounded-md disabled:opacity-50" ${currentPage === Math.ceil(filteredData.length / rowsPerPage) ? 'disabled' : ''}>Próximo</button>
+                </div>
+            </div>
+        `;
+        container.innerHTML = tableHTML;
+    }
+
+    function sortTable(key) {
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            sortConfig.direction = 'descending';
+        } else {
+            sortConfig.key = key;
+            sortConfig.direction = 'ascending';
+        }
+        currentPage = 1;
+        renderTable();
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        renderTable();
     }
 
     function renderStatistics() {
@@ -273,11 +333,51 @@
         if (charts[canvasId]) charts[canvasId].destroy();
         const ctx = document.getElementById(canvasId);
         if (!ctx) return;
-        charts[canvasId] = new Chart(ctx, {
-            type,
-            data: { labels, datasets },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
+
+        // Add a loading spinner feel
+        const container = ctx.parentElement;
+        container.style.opacity = 0.5;
+
+        setTimeout(() => {
+            charts[canvasId] = new Chart(ctx, {
+                type,
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            cornerRadius: 4,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('pt-BR', { style: 'decimal' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 500,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            container.style.opacity = 1;
+        }, 300); // Small delay to simulate loading and allow rendering
     }
 
     function calculateCorrelation(col1, col2) {
