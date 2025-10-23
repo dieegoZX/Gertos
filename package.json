@@ -9,7 +9,7 @@
     "preview:cf": "npm run build:cf && wrangler pages dev .open-next",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "npm run build:cf"
+    "deploy": "npm run build:cf && wrangler deploy"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
