@@ -1,6 +1,0 @@
-# wrangler.toml
-name = "my-analytics-app"
-pages_build_output_dir = ".open-next"
-
-[vars]
-OPEN_NEXT_FORCE_PRERENDER = false
