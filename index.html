@@ -1,78 +1,1832 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Análise de Dados</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <aside class="control-panel">
-            <h2>Painel de Controlo</h2>
-
-            <div id="new-analysis-container" style="display: none;">
-                <button id="newAnalysisBtn" class="new-analysis-btn">Iniciar Nova Análise</button>
-            </div>
-
-            <div id="main-controls">
-                <div class="control-group">
-                    <h3>Carregar Dados</h3>
-                    <div id="drop-area" class="drop-area">
-                        <p>Arraste e solte o seu ficheiro CSV aqui ou clique para selecionar.</p>
-                        <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
-                    </div>
-                    <div id="spinner" class="spinner" style="display: none;"></div>
-                </div>
-
-                <div class="control-group">
-                    <h3>Customização do Gráfico</h3>
-                    <label for="xAxisSelect">Eixo X (Etiquetas):</label>
-                    <select id="xAxisSelect" disabled></select>
-
-                    <label for="yAxisSelect">Eixo Y (Valores):</label>
-                    <select id="yAxisSelect" disabled multiple size="5"></select>
-                    <p class="help-text">(Segure Ctrl/Cmd para selecionar várias)</p>
-                </div>
-
-                <div class="control-group">
-                    <h3>Tipo de Gráfico</h3>
-                    <div class="chart-type-buttons">
-                        <button class="chart-type-btn active" data-type="bar">Barras</button>
-                        <button class="chart-type-btn" data-type="line">Linhas</button>
-                        <button class="chart-type-btn" data-type="pie">Pizza</button>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>Partilhar</h3>
-                    <button id="exportBtn" class="export-btn">Exportar como PNG</button>
-                    <button id="shareLinkBtn" class="share-btn">Gerar Link de Partilha</button>
-                    <input type="text" id="shareLinkInput" class="share-link-input" readonly placeholder="O seu link de partilha aparecerá aqui...">
-                </div>
-            </div>
-
-             <div id="message-area" class="message-area"></div>
-        </aside>
-
-        <main class="dashboard">
-            <header>
-                <h1>Dashboard de Análise de Dados</h1>
-            </header>
-            <section class="chart-container">
-                <canvas id="myChart"></canvas>
-            </section>
-            <section id="analysis-results" class="analysis-section" style="display: none;">
-                <h2>Análise Rápida</h2>
-                <div id="analysis-stats"></div>
-            </section>
-        </main>
-    </div>
-
+    <title>Dashboard Analytics Pro - Análise Avançada de Dados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
-    <script src="script.js"></script>
-</body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+
+    [data-theme="dark"] {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --bg-tertiary: #334155;
+        --text-primary: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --border: #475569;
+    }
+
+    [data-theme="light"] {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8fafc;
+        --bg-tertiary: #e2e8f0;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border: #e2e8f0;
+    }
+
+    * {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .gradient-bg {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+        animation: slideUp 0.5s ease-out forwards;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .loader {
+        border: 4px solid rgba(99, 102, 241, 0.1);
+        border-top: 4px solid var(--primary);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .tab-active {
+        border-bottom-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: var(--bg-tertiary);
+        border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 10px;
+    }
+
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+
+    .tooltip {
+        position: relative;
+    }
+
+    .tooltip-text {
+        visibility: hidden;
+        background-color: var(--dark);
+        color: white;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 10px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    .tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    .stat-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .filter-tag {
+        display: inline-block;
+        padding: 4px 12px;
+        background: var(--primary);
+        color: white;
+        border-radius: 20px;
+        font-size: 12px;
+        margin: 2px;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 300px;
+        }
+    }
+</style></head>
+<body data-theme="light">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-chart-line text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold">Dashboard Analytics Pro</h1>
+                        <p class="text-sm opacity-90">Análise Avançada de Dados CSV</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition">
+                        <i class="fas fa-moon text-xl"></i>
+                    </button>
+                    <button id="helpBtn" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition">
+                        <i class="fas fa-question-circle text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+<!-- Main Content -->
+<main class="container mx-auto p-4 md:p-8">
+    <!-- Upload Section -->
+    <section id="uploadSection" class="mb-8 animate-fade-in">
+        <div class="max-w-4xl mx-auto">
+            <div class="stat-card rounded-2xl shadow-xl p-8 card-hover">
+                <div class="text-center mb-6">
+                    <i class="fas fa-cloud-upload-alt text-6xl text-indigo-500 mb-4"></i>
+                    <h2 class="text-2xl font-bold mb-2">Carregar Dados</h2>
+                    <p class="text-gray-500">Faça upload do seu arquivo CSV para começar a análise</p>
+                </div>
+                
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-500 transition-colors">
+                    <input type="file" id="csvFile" accept=".csv" class="hidden">
+                    <label for="csvFile" class="cursor-pointer">
+                        <i class="fas fa-file-csv text-5xl text-gray-400 mb-4"></i>
+                        <p class="text-lg font-medium mb-2">Arraste e solte ou clique para selecionar</p>
+                        <p class="text-sm text-gray-500">Arquivos CSV suportados</p>
+                        <button class="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-folder-open mr-2"></i>Selecionar Arquivo
+                        </button>
+                    </label>
+                </div>
+                
+                <div id="loadingSpinner" class="hidden justify-center items-center mt-6">
+                    <div class="loader"></div>
+                </div>
+                
+                <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                        <span id="errorText" class="text-red-700"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboardSection" class="hidden animate-fade-in">
+        <!-- Stats Cards -->
+        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
+
+        <!-- Controls Panel -->
+        <div class="stat-card rounded-2xl shadow-xl p-6 mb-8">
+            <h3 class="text-xl font-bold mb-6 flex items-center">
+                <i class="fas fa-sliders-h mr-2 text-indigo-500"></i>
+                Painel de Controle
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Dimension Selection -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Dimensão (Eixo X)</label>
+                    <select id="dimensionSelect" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+
+                <!-- Metrics Selection -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Métricas</label>
+                    <div id="metricSelector" class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar"></div>
+                </div>
+
+                <!-- Chart Types -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Tipos de Gráfico</label>
+                    <div id="chartTypeSelector" class="grid grid-cols-2 gap-2"></div>
+                </div>
+            </div>
+
+            <!-- Advanced Controls -->
+            <div class="mt-6 pt-6 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Filtros Avançados</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="filterInput" placeholder="Filtrar dados..." class="flex-1 p-2 border rounded-lg">
+                        <button id="applyFilter" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-filter"></i>
+                        </button>
+                    </div>
+                    <div id="activeFilters" class="mt-2"></div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Ações Rápidas</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="refreshData" class="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                            <i class="fas fa-sync-alt mr-1"></i>Atualizar
+                        </button>
+                        <button id="clearFilters" class="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                            <i class="fas fa-times mr-1"></i>Limpar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div class="mt-6 pt-6 border-t flex flex-wrap gap-3">
+                <button id="shareDashboard" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-share-alt mr-2"></i>Compartilhar
+                </button>
+                <button id="exportPDF" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                    <i class="fas fa-file-pdf mr-2"></i>Exportar PDF
+                </button>
+                <button id="exportExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-file-excel mr-2"></i>Exportar Excel
+                </button>
+                <button id="exportJSON" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                    <i class="fas fa-file-code mr-2"></i>Exportar JSON
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="border-b mb-6">
+            <nav class="flex space-x-8">
+                <button class="tab-btn py-3 px-1 border-b-2 font-medium tab-active" data-tab="overview">
+                    <i class="fas fa-chart-pie mr-2"></i>Visão Geral
+                </button>
+                <button class="tab-btn py-3 px-1 border-b-2 font-medium text-gray-500" data-tab="charts">
+                    <i class="fas fa-chart-bar mr-2"></i>Gráficos
+                </button>
+                <button class="tab-btn py-3 px-1 border-b-2 font-medium text-gray-500" data-tab="table">
+                    <i class="fas fa-table mr-2"></i>Tabela de Dados
+                </button>
+                <button class="tab-btn py-3 px-1 border-b-2 font-medium text-gray-500" data-tab="statistics">
+                    <i class="fas fa-calculator mr-2"></i>Estatísticas
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tabContent">
+            <!-- Overview Tab -->
+            <div id="overviewTab" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="stat-card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">Distribuição de Dados</h3>
+                        <div class="chart-container">
+                            <canvas id="overviewChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="stat-card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">Top Valores</h3>
+                        <div id="topValues" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Tab -->
+            <
+   
+ 
+ 
+ Me de o HTML completo 
+ 
+ 
+profile
+GLM-4.6
+ 
+  
+The user wants the complete HTML for the improved dashboard. I need to provide the full HTML file with all the improvements discussed, including:
+ 
+ 
+ 
+
+    The user wants the complete HTML for the improved dashboard. I need to provide the full HTML file with all the improvements discussed, including: 
+
+         Enhanced visual design with modern UI elements
+         Dark mode support
+         Advanced filtering capabilities
+         Multiple export options (PDF, Excel, JSON)
+         Statistics tab
+         Improved animations and transitions
+         Better responsive design
+         More interactive elements
+         Professional color scheme
+         Enhanced data visualization options
+         
+
+    I'll create a comprehensive, feature-rich dashboard that incorporates all these improvements while maintaining the core functionality of CSV data analysis. 
+     
+
+ 
+ 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analytics Pro - Análise Avançada de Dados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+
+    [data-theme="dark"] {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --bg-tertiary: #334155;
+        --text-primary: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --border: #475569;
+    }
+
+    [data-theme="light"] {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8fafc;
+        --bg-tertiary: #e2e8f0;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border: #e2e8f0;
+    }
+
+    * {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .gradient-bg {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-slide-up {
+        animation: slideUp 0.5s ease-out forwards;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .loader {
+        border: 4px solid rgba(99, 102, 241, 0.1);
+        border-top: 4px solid var(--primary);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .tab-active {
+        border-bottom-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: var(--bg-tertiary);
+        border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 10px;
+    }
+
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+
+    .tooltip {
+        position: relative;
+    }
+
+    .tooltip-text {
+        visibility: hidden;
+        background-color: var(--dark);
+        color: white;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 10px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    .tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    .stat-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .filter-tag {
+        display: inline-block;
+        padding: 4px 12px;
+        background: var(--primary);
+        color: white;
+        border-radius: 20px;
+        font-size: 12px;
+        margin: 2px;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 300px;
+        }
+    }
+
+    .progress-bar {
+        height: 8px;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: var(--bg-tertiary);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .data-table tr:hover {
+        background: var(--bg-secondary);
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+</style></head>
+<body data-theme="light">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-chart-line text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold">Dashboard Analytics Pro</h1>
+                        <p class="text-sm opacity-90">Análise Avançada de Dados CSV</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition">
+                        <i class="fas fa-moon text-xl"></i>
+                    </button>
+                    <button id="helpBtn" class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition">
+                        <i class="fas fa-question-circle text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+<!-- Main Content -->
+<main class="container mx-auto p-4 md:p-8">
+    <!-- Upload Section -->
+    <section id="uploadSection" class="mb-8 animate-fade-in">
+        <div class="max-w-4xl mx-auto">
+            <div class="stat-card rounded-2xl shadow-xl p-8 card-hover">
+                <div class="text-center mb-6">
+                    <i class="fas fa-cloud-upload-alt text-6xl text-indigo-500 mb-4"></i>
+                    <h2 class="text-2xl font-bold mb-2">Carregar Dados</h2>
+                    <p class="text-gray-500">Faça upload do seu arquivo CSV para começar a análise</p>
+                </div>
+                
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-500 transition-colors">
+                    <input type="file" id="csvFile" accept=".csv" class="hidden">
+                    <label for="csvFile" class="cursor-pointer">
+                        <i class="fas fa-file-csv text-5xl text-gray-400 mb-4"></i>
+                        <p class="text-lg font-medium mb-2">Arraste e solte ou clique para selecionar</p>
+                        <p class="text-sm text-gray-500">Arquivos CSV suportados</p>
+                        <button class="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-folder-open mr-2"></i>Selecionar Arquivo
+                        </button>
+                    </label>
+                </div>
+                
+                <div id="loadingSpinner" class="hidden justify-center items-center mt-6">
+                    <div class="loader"></div>
+                </div>
+                
+                <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                        <span id="errorText" class="text-red-700"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboardSection" class="hidden animate-fade-in">
+        <!-- Stats Cards -->
+        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
+
+        <!-- Controls Panel -->
+        <div class="stat-card rounded-2xl shadow-xl p-6 mb-8">
+            <h3 class="text-xl font-bold mb-6 flex items-center">
+                <i class="fas fa-sliders-h mr-2 text-indigo-500"></i>
+                Painel de Controle
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Dimension Selection -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Dimensão (Eixo X)</label>
+                    <select id="dimensionSelect" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+
+                <!-- Metrics Selection -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Métricas</label>
+                    <div id="metricSelector" class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar"></div>
+                </div>
+
+                <!-- Chart Types -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Tipos de Gráfico</label>
+                    <div id="chartTypeSelector" class="grid grid-cols-2 gap-2"></div>
+                </div>
+            </div>
+
+            <!-- Advanced Controls -->
+            <div class="mt-6 pt-6 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Filtros Avançados</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="filterInput" placeholder="Filtrar dados..." class="flex-1 p-2 border rounded-lg">
+                        <button id="applyFilter" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-filter"></i>
+                        </button>
+                    </div>
+                    <div id="activeFilters" class="mt-2"></div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Ações Rápidas</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="refreshData" class="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                            <i class="fas fa-sync-alt mr-1"></i>Atualizar
+                        </button>
+                        <button id="clearFilters" class="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                            <i class="fas fa-times mr-1"></i>Limpar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div class="mt-6 pt-6 border-t flex flex-wrap gap-3">
+                <button id="shareDashboard" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-share-alt mr-2"></i>Compartilhar
+                </button>
+                <button id="exportPDF" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                    <i class="fas fa-file-pdf mr-2"></i>Exportar PDF
+                </button>
+                <button id="exportExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-file-excel mr-2"></i>Exportar Excel
+                </button>
+                <button id="exportJSON" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                    <i class="fas fa-file-code mr-2"></i>Exportar JSON
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="border-b mb-6">
+            <nav class="flex space-x-8">
+                <button class="tab-btn py-3 px-1 border-b-2 font-medium tab-active" data-tab="overview">
+                    <i class="fas fa-chart-pie mr-2"></i>Visão Geral
+                </button>
+                <button class="tab-btn py-3 px-1 border-b-2 font-medium text-gray-500" data-tab="charts">
+                    <i class="fas fa-chart-bar mr-2"></i>Gráficos
+                </button>
+                <button class="tab-btn py-3 px-1 border-b-2 font-medium text-gray-500" data-tab="table">
+                    <i class="fas fa-table mr-2"></i>Tabela de Dados
+                </button>
+                <button class="tab-btn py-3 px-1 border-b-2 font-medium text-gray-500" data-tab="statistics">
+                    <i class="fas fa-calculator mr-2"></i>Estatísticas
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tabContent">
+            <!-- Overview Tab -->
+            <div id="overviewTab" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="stat-card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">Distribuição de Dados</h3>
+                        <div class="chart-container">
+                            <canvas id="overviewChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="stat-card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">Top Valores</h3>
+                        <div id="topValues" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Tab -->
+            <div id="chartsTab" class="tab-content hidden">
+                <div id="chartsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+            </div>
+
+            <!-- Table Tab -->
+            <div id="tableTab" class="tab-content hidden">
+                <div class="stat-card rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold">Tabela de Dados</h3>
+                        <div class="flex space-x-2">
+                            <input type="text" id="tableSearch" placeholder="Buscar..." class="px-3 py-2 border rounded-lg">
+                            <select id="rowsPerPage" class="px-3 py-2 border rounded-lg">
+                                <option value="10">10 linhas</option>
+                                <option value="25">25 linhas</option>
+                                <option value="50">50 linhas</option>
+                                <option value="100">100 linhas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table id="dataTable" class="data-table"></table>
+                    </div>
+                    <div id="pagination" class="flex justify-between items-center mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div id="statisticsTab" class="tab-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="stat-card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">Estatísticas Descritivas</h3>
+                        <div id="descriptiveStats" class="space-y-3"></div>
+                    </div>
+                    <div class="stat-card rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-4">Correlação de Variáveis</h3>
+                        <div class="chart-container">
+                            <canvas id="correlationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Help Modal -->
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Ajuda</h3>
+            <button id="closeHelp" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <h4 class="font-semibold mb-2">Como usar:</h4>
+                <ol class="list-decimal list-inside space-y-1 text-sm">
+                    <li>Faça upload de um arquivo CSV</li>
+                    <li>Selecione a dimensão para o eixo X</li>
+                    <li>Escolha as métricas para análise</li>
+                    <li>Selecione os tipos de gráfico desejados</li>
+                    <li>Explore os dados nas diferentes abas</li>
+                </ol>
+            </div>
+            <div>
+                <h4 class="font-semibold mb-2">Recursos:</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                    <li>Filtros avançados</li>
+                    <li>Múltiplos formatos de exportação</li>
+                    <li>Compartilhamento de dashboards</li>
+                    <li>Análise estatística</li>
+                    <li>Modo escuro/claro</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
+<script>
+    // Global Variables
+    let fullData = [];
+    let filteredData = [];
+    let headers = [];
+    let numericHeaders = [];
+    let charts = {};
+    let currentPage = 1;
+    let rowsPerPage = 10;
+    let activeFilters = [];
+
+    // Theme Management
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        body.setAttribute('data-theme', newTheme);
+        themeToggle.innerHTML = newTheme === 'light' ? '<i class="fas fa-moon text-xl"></i>' : '<i class="fas fa-sun text-xl"></i>';
+        localStorage.setItem('theme', newTheme);
+    });
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', savedTheme);
+    themeToggle.innerHTML = savedTheme === 'light' ? '<i class="fas fa-moon text-xl"></i>' : '<i class="fas fa-sun text-xl"></i>';
+
+    // Help Modal
+    const helpBtn = document.getElementById('helpBtn');
+    const helpModal = document.getElementById('helpModal');
+    const closeHelp = document.getElementById('closeHelp');
+
+    helpBtn.addEventListener('click', () => {
+        helpModal.classList.add('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+        helpModal.classList.remove('active');
+    });
+
+    helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) {
+            helpModal.classList.remove('active');
+        }
+    });
+
+    // File Upload
+    const csvFileInput = document.getElementById('csvFile');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    const uploadSection = document.getElementById('uploadSection');
+    const dashboardSection = document.getElementById('dashboardSection');
+
+    csvFileInput.addEventListener('change', handleFileUpload);
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            showError('Por favor, selecione um arquivo CSV válido.');
+            return;
+        }
+
+        loadingSpinner.style.display = 'flex';
+        errorMessage.classList.add('hidden');
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            Papa.parse(e.target.result, {
+                header: true,
+                skipEmptyLines: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    loadingSpinner.style.display = 'none';
+                    if (results.errors.length > 0) {
+                        showError('Erro ao processar o arquivo CSV.');
+                        return;
+                    }
+                    
+                    fullData = results.data;
+                    filteredData = [...fullData];
+                    headers = results.meta.fields;
+                    numericHeaders = headers.filter(h => 
+                        fullData.some(row => typeof row[h] === 'number')
+                    );
+
+                    initializeDashboard();
+                    showNotification('Dados carregados com sucesso!', 'success');
+                },
+                error: function() {
+                    loadingSpinner.style.display = 'none';
+                    showError('Não foi possível ler o arquivo.');
+                }
+            });
+        };
+        reader.readAsText(file);
+    }
+
+    function initializeDashboard() {
+        uploadSection.classList.add('hidden');
+        dashboardSection.classList.remove('hidden');
+        
+        updateStatsCards();
+        populateSelectors();
+        initializeTabs();
+        updateOverview();
+        updateCharts();
+        updateTable();
+        updateStatistics();
+    }
+
+    function updateStatsCards() {
+        const statsContainer = document.getElementById('statsContainer');
+        const stats = [
+            { title: 'Total de Registros', value: filteredData.length, icon: 'fa-database', color: 'blue' },
+            { title: 'Colunas', value: headers.length, icon: 'fa-columns', color: 'green' },
+            { title: 'Colunas Numéricas', value: numericHeaders.length, icon: 'fa-chart-line', color: 'purple' },
+            { title: 'Dados Únicos', value: countUniqueRecords(), icon: 'fa-fingerprint', color: 'orange' }
+        ];
+
+        statsContainer.innerHTML = stats.map(stat => `
+            <div class="stat-card rounded-xl p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">${stat.title}</p>
+                        <p class="text-3xl font-bold mt-2">${stat.value.toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div class="text-4xl text-${stat.color}-500">
+                        <i class="fas ${stat.icon}"></i>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function countUniqueRecords() {
+        const unique = new Set(filteredData.map(row => JSON.stringify(row)));
+        return unique.size;
+    }
+
+    function populateSelectors() {
+        // Dimension Selector
+        const dimensionSelect = document.getElementById('dimensionSelect');
+        dimensionSelect.innerHTML = '<option value="">Selecione...</option>';
+        headers.forEach(header => {
+            dimensionSelect.innerHTML += `<option value="${header}">${header}</option>`;
+        });
+
+        // Metrics Selector
+        const metricSelector = document.getElementById('metricSelector');
+        metricSelector.innerHTML = '';
+        numericHeaders.forEach(header => {
+            metricSelector.innerHTML += `
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" value="${header}" class="metric-checkbox rounded text-indigo-600">
+                    <span>${header}</span>
+                </label>
+            `;
+        });
+
+        // Chart Type Selector
+        const chartTypeSelector = document.getElementById('chartTypeSelector');
+        const chartTypes = [
+            { id: 'bar', name: 'Barras', icon: 'fa-chart-bar' },
+            { id: 'line', name: 'Linha', icon: 'fa-chart-line' },
+            { id: 'pie', name: 'Pizza', icon: 'fa-chart-pie' },
+            { id: 'doughnut', name: 'Rosca', icon: 'fa-circle-notch' },
+            { id: 'radar', name: 'Radar', icon: 'fa-spider' },
+            { id: 'polarArea', name: 'Polar', icon: 'fa-compass' }
+        ];
+
+        chartTypeSelector.innerHTML = '';
+        chartTypes.forEach(type => {
+            chartTypeSelector.innerHTML += `
+                <label class="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-100">
+                    <input type="checkbox" value="${type.id}" class="chart-type-checkbox rounded text-indigo-600" checked>
+                    <i class="fas ${type.icon}"></i>
+                    <span>${type.name}</span>
+                </label>
+            `;
+        });
+
+        // Add event listeners
+        dimensionSelect.addEventListener('change', updateAllViews);
+        document.querySelectorAll('.metric-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateAllViews);
+        });
+        document.querySelectorAll('.chart-type-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateCharts);
+        });
+    }
+
+    function initializeTabs() {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.getAttribute('data-tab');
+                switchTab(tabName);
+            });
+        });
+    }
+
+    function switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('tab-active');
+            btn.classList.add('text-gray-500');
+        });
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('tab-active');
+        document.querySelector(`[data-tab="${tabName}"]`).classList.remove('text-gray-500');
+
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+
+        // Update specific tab content
+        if (tabName === 'charts') updateCharts();
+        if (tabName === 'table') updateTable();
+        if (tabName === 'statistics') updateStatistics();
+    }
+
+    function updateAllViews() {
+        updateOverview();
+        updateCharts();
+        updateTable();
+        updateStatistics();
+    }
+
+    function updateOverview() {
+        const dimension = document.getElementById('dimensionSelect').value;
+        if (!dimension) return;
+
+        // Update overview chart
+        const ctx = document.getElementById('overviewChart').getContext('2d');
+        if (charts.overview) charts.overview.destroy();
+
+        const aggregatedData = aggregateData(dimension);
+        charts.overview = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(aggregatedData),
+                datasets: [{
+                    data: Object.values(aggregatedData),
+                    backgroundColor: [
+                        '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', 
+                        '#f97316', '#eab308', '#84cc16', '#22c55e',
+                        '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Update top values
+        updateTopValues(dimension);
+    }
+
+    function aggregateData(dimension) {
+        const counts = {};
+        filteredData.forEach(row => {
+            const value = row[dimension];
+            counts[value] = (counts[value] || 0) + 1;
+        });
+        return counts;
+    }
+
+    function updateTopValues(dimension) {
+        const aggregatedData = aggregateData(dimension);
+        const sorted = Object.entries(aggregatedData)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+        const topValuesContainer = document.getElementById('topValues');
+        topValuesContainer.innerHTML = sorted.map(([value, count], index) => {
+            const percentage = (count / filteredData.length * 100).toFixed(1);
+            return `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-lg font-bold text-gray-400">#${index + 1}</span>
+                        <span class="font-medium">${value}</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-32">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-500">${percentage}%</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateCharts() {
+        const dimension = document.getElementById('dimensionSelect').value;
+        const selectedMetrics = Array.from(document.querySelectorAll('.metric-checkbox:checked'))
+            .map(cb => cb.value);
+        const selectedChartTypes = Array.from(document.querySelectorAll('.chart-type-checkbox:checked'))
+            .map(cb => cb.value);
+
+        if (!dimension || selectedMetrics.length === 0) return;
+
+        const chartsContainer = document.getElementById('chartsContainer');
+        chartsContainer.innerHTML = '';
+
+        // Destroy existing charts
+        Object.values(charts).forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+            }
+        });
+        charts = {};
+
+        selectedChartTypes.forEach((chartType, index) => {
+            const chartDiv = document.createElement('div');
+            chartDiv.className = 'stat-card rounded-xl p-6';
+            chartDiv.innerHTML = `
+                <h3 class="text-lg font-bold mb-4 capitalize">${chartType} Chart</h3>
+                <div class="chart-container">
+                    <canvas id="chart-${index}"></canvas>
+                </div>
+            `;
+            chartsContainer.appendChild(chartDiv);
+
+            const ctx = document.getElementById(`chart-${index}`).getContext('2d');
+            const chartData = prepareChartData(dimension, selectedMetrics);
+            
+            charts[`chart-${index}`] = new Chart(ctx, {
+                type: chartType,
+                data: chartData,
+                options: getChartOptions(chartType)
+            });
+        });
+    }
+
+    function prepareChartData(dimension, metrics) {
+        const labels = [...new Set(filteredData.map(row => row[dimension]))];
+        const datasets = metrics.map((metric, index) => {
+            const data = labels.map(label => {
+                const rows = filteredData.filter(row => row[dimension] === label);
+                return rows.reduce((sum, row) => sum + (row[metric] || 0), 0);
+            });
+
+            const colors = [
+                'rgba(99, 102, 241, 0.8)',
+                'rgba(139, 92, 246, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(244, 63, 94, 0.8)',
+                'rgba(249, 115, 22, 0.8)',
+                'rgba(234, 179, 8, 0.8)'
+            ];
+
+            return {
+                label: metric,
+                data: data,
+                backgroundColor: colors[index % colors.length],
+                borderColor: colors[index % colors.length].replace('0.8', '1'),
+                borderWidth: 2,
+                tension: 0.4
+            };
+        });
+
+        return { labels, datasets };
+    }
+
+    function getChartOptions(chartType) {
+        const baseOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            }
+        };
+
+        if (chartType === 'bar' || chartType === 'line') {
+            baseOptions.scales = {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            };
+        }
+
+        return baseOptions;
+    }
+
+    function updateTable() {
+        const table = document.getElementById('dataTable');
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = filteredData.slice(start, end);
+
+        // Table headers
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    ${headers.map(header => `
+                        <th class="cursor-pointer hover:bg-gray-100" onclick="sortTable('${header}')">
+                            ${header} <i class="fas fa-sort text-xs"></i>
+                        </th>
+                    `).join('')}
+                </tr>
+            </thead>
+        `;
+
+        // Table body
+        const tbody = document.createElement('tbody');
+        pageData.forEach(row => {
+            const tr = document.createElement('tr');
+            headers.forEach(header => {
+                const td = document.createElement('td');
+                td.textContent = row[header] || '';
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+
+        updatePagination();
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+        const pagination = document.getElementById('pagination');
+        
+        pagination.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <button onclick="changePage(${currentPage - 1})" 
+                        class="px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 hover:bg-gray-200'}"
+                        ${currentPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="px-3 py-1">Página ${currentPage} de ${totalPages}</span>
+                <button onclick="changePage(${currentPage + 1})" 
+                        class="px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 hover:bg-gray-200'}"
+                        ${currentPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="text-sm text-gray-500">
+                Mostrando ${((currentPage - 1) * rowsPerPage) + 1} a ${Math.min(currentPage * rowsPerPage, filteredData.length)} de ${filteredData.length} registros
+            </div>
+        `;
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        updateTable();
+    }
+
+    function sortTable(column) {
+        filteredData.sort((a, b) => {
+            if (a[column] < b[column]) return -1;
+            if (a[column] > b[column]) return 1;
+            return 0;
+        });
+        updateTable();
+    }
+
+    function updateStatistics() {
+        const descriptiveStats = document.getElementById('descriptiveStats');
+        const stats = calculateDescriptiveStats();
+        
+        descriptiveStats.innerHTML = numericHeaders.map(header => {
+            const stat = stats[header];
+            return `
+                <div class="border rounded-lg p-3">
+                    <h4 class="font-semibold mb-2">${header}</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>Média: <span class="font-medium">${stat.mean.toFixed(2)}</span></div>
+                        <div>Mediana: <span class="font-medium">${stat.median.toFixed(2)}</span></div>
+                        <div>Mínimo: <span class="font-medium">${stat.min.toFixed(2)}</span></div>
+                        <div>Máximo: <span class="font-medium">${stat.max.toFixed(2)}</span></div>
+                        <div>Desvio Padrão: <span class="font-medium">${stat.stdDev.toFixed(2)}</span></div>
+                        <div>Contagem: <span class="font-medium">${stat.count}</span></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Update correlation chart
+        updateCorrelationChart();
+    }
+
+    function calculateDescriptiveStats() {
+        const stats = {};
+        numericHeaders.forEach(header => {
+            const values = filteredData.map(row => row[header]).filter(v => v !== null && v !== undefined);
+            const sorted = [...values].sort((a, b) => a - b);
+            const sum = values.reduce((a, b) => a + b, 0);
+            const mean = sum / values.length;
+            const median = sorted.length % 2 === 0
+                ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+                : sorted[Math.floor(sorted.length / 2)];
+            
+            const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
+            const stdDev = Math.sqrt(variance);
+
+            stats[header] = {
+                mean,
+                median,
+                min: Math.min(...values),
+                max: Math.max(...values),
+                stdDev,
+                count: values.length
+            };
+        });
+        return stats;
+    }
+
+    function updateCorrelationChart() {
+        const ctx = document.getElementById('correlationChart').getContext('2d');
+        if (charts.correlation) charts.correlation.destroy();
+
+        if (numericHeaders.length < 2) {
+            ctx.font = '14px Inter';
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.fillText('É necessário pelo menos 2 colunas numéricas', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            return;
+        }
+
+        const correlationMatrix = calculateCorrelationMatrix();
+        
+        charts.correlation = new Chart(ctx, {
+            type: 'heatmap',
+            data: {
+                labels: numericHeaders,
+                datasets: [{
+                    data: correlationMatrix,
+                    backgroundColor: (ctx) => {
+                        const value = ctx.dataset.data[ctx.dataIndex];
+                        const alpha = Math.abs(value);
+                        return value > 0 
+                            ? `rgba(99, 102, 241, ${alpha})`
+                            : `rgba(239, 68, 68, ${alpha})`;
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const i = Math.floor(ctx.dataIndex / numericHeaders.length);
+                                const j = ctx.dataIndex % numericHeaders.length;
+                                return `${numericHeaders[i]} vs ${numericHeaders[j]}: ${ctx.dataset.data[ctx.dataIndex].toFixed(3)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'category',
+                        labels: numericHeaders
+                    },
+                    y: {
+                        type: 'category',
+                        labels: numericHeaders
+                    }
+                }
+            }
+        });
+    }
+
+    function calculateCorrelationMatrix() {
+        const matrix = [];
+        for (let i = 0; i < numericHeaders.length; i++) {
+            for (let j = 0; j < numericHeaders.length; j++) {
+                const correlation = calculateCorrelation(numericHeaders[i], numericHeaders[j]);
+                matrix.push(correlation);
+            }
+        }
+        return matrix;
+    }
+
+    function calculateCorrelation(col1, col2) {
+        const values1 = filteredData.map(row => row[col1]).filter(v => v !== null && v !== undefined);
+        const values2 = filteredData.map(row => row[col2]).filter(v => v !== null && v !== undefined);
+        
+        const n = Math.min(values1.length, values2.length);
+        const sum1 = values1.slice(0, n).reduce((a, b) => a + b, 0);
+        const sum2 = values2.slice(0, n).reduce((a, b) => a + b, 0);
+        
+        const mean1 = sum1 / n;
+        const mean2 = sum2 / n;
+        
+        let numerator = 0;
+        let sumSq1 = 0;
+        let sumSq2 = 0;
+        
+        for (let i = 0; i < n; i++) {
+            const diff1 = values1[i] - mean1;
+            const diff2 = values2[i] - mean2;
+            numerator += diff1 * diff2;
+            sumSq1 += diff1 * diff1;
+            sumSq2 += diff2 * diff2;
+        }
+        
+        const denominator = Math.sqrt(sumSq1 * sumSq2);
+        return denominator === 0 ? 0 : numerator / denominator;
+    }
+
+    // Filter functionality
+    const filterInput = document.getElementById('filterInput');
+    const applyFilter = document.getElementById('applyFilter');
+    const clearFilters = document.getElementById('clearFilters');
+    const activeFiltersContainer = document.getElementById('activeFilters');
+
+    applyFilter.addEventListener('click', () => {
+        const filterText = filterInput.value.trim();
+        if (!filterText) return;
+
+        activeFilters.push(filterText);
+        applyFilters();
+        filterInput.value = '';
+        updateActiveFiltersDisplay();
+    });
+
+    clearFilters.addEventListener('click', () => {
+        activeFilters = [];
+        filteredData = [...fullData];
+        updateAllViews();
+        updateActiveFiltersDisplay();
+    });
+
+    function applyFilters() {
+        filteredData = fullData.filter(row => {
+            return activeFilters.every(filter => {
+                return Object.values(row).some(value => 
+                    String(value).toLowerCase().includes(filter.toLowerCase())
+                );
+            });
+        });
+        currentPage = 1;
+        updateAllViews();
+    }
+
+    function updateActiveFiltersDisplay() {
+        if (activeFilters.length === 0) {
+            activeFiltersContainer.innerHTML = '';
+            return;
+        }
+
+        activeFiltersContainer.innerHTML = activeFilters.map((filter, index) => `
+            <span class="filter-tag">
+                ${filter}
+                <button onclick="removeFilter(${index})" class="ml-2">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </span>
+        `).join('');
+    }
+
+    function removeFilter(index) {
+        activeFilters.splice(index, 1);
+        applyFilters();
+        updateActiveFiltersDisplay();
+    }
+
+    // Table search
+    const tableSearch = document.getElementById('tableSearch');
+    tableSearch.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#dataTable tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Rows per page
+    const rowsPerPageSelect = document.getElementById('rowsPerPage');
+    rowsPerPageSelect.addEventListener('change', (e) => {
+        rowsPerPage = parseInt(e.target.value);
+        currentPage = 1;
+        updateTable();
+    });
+
+    // Refresh data
+    document.getElementById('refreshData').addEventListener('click', () => {
+        updateAllViews();
+        showNotification('Dados atualizados!', 'success');
+    });
+
+    // Export functions
+    document.getElementById('exportPDF').addEventListener('click', exportToPDF);
+    document.getElementById('exportExcel').addEventListener('click', exportToExcel);
+    document.getElementById('exportJSON').addEventListener('click', exportToJSON);
+    document.getElementById('shareDashboard').addEventListener('click', shareDashboard);
+
+    function exportToPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.text('Dashboard Analytics Pro - Relatório', 20, 20);
+        
+        // Add stats
+        let yPosition = 40;
+        const stats = document.querySelectorAll('#statsContainer .stat-card');
+        stats.forEach(stat => {
+            const text = stat.textContent.trim();
+            doc.text(text, 20, yPosition);
+            yPosition += 10;
+        });
+        
+        // Add table
+        doc.autoTable({
+            head: [headers],
+            body: filteredData.map(row => headers.map(h => row[h] || '')),
+            startY: yPosition + 10
+        });
+        
+        doc.save('dashboard-report.pdf');
+        showNotification('PDF exportado com sucesso!', 'success');
+    }
+
+    function exportToExcel() {
+        const ws = XLSX.utils.json_to_sheet(filteredData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+        XLSX.writeFile(wb, 'dashboard-data.xlsx');
+        showNotification('Excel exportado com sucesso!', 'success');
+    }
+
+    function exportToJSON() {
+        const dataStr = JSON.stringify(filteredData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = 'dashboard-data.json';
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        showNotification('JSON exportado com sucesso!', 'success');
+    }
+
+    function shareDashboard() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            showNotification('Link copiado para a área de transferência!', 'success');
+        });
+    }
+
+    // Utility functions
+    function showError(message) {
+        errorMessage.classList.remove('hidden');
+        errorText.textContent = message;
+        setTimeout(() => {
+            errorMessage.classList.add('hidden');
+        }, 5000);
+    }
+
+    function showNotification(message, type = 'info') {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+        notification.className = `notification p-4 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500' : 
+            type === 'error' ? 'bg-red-500' : 
+            'bg-blue-500'
+        } text-white`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${
+                    type === 'success' ? 'fa-check-circle' : 
+                    type === 'error' ? 'fa-exclamation-circle' : 
+                    'fa-info-circle'
+                } mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        container.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                container.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Drag and drop functionality
+    const dropZone = document.querySelector('.border-dashed');
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            csvFileInput.files = files;
+            handleFileUpload({ target: { files: files } });
+        }
+    });
+</script></body>
 </html>
+   
